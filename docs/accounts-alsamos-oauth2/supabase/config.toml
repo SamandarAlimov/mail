@@ -1,0 +1,17 @@
+# accounts.alsamos.com config.toml
+# Bu faylni accounts.alsamos.com loyihasiga ko'chiring va 
+# mavjud config.toml ga qo'shing
+
+# project_id = "YOUR_PROJECT_ID" # Bu qator allaqachon mavjud bo'lishi kerak
+
+[functions.oauth-authorize]
+verify_jwt = false
+
+[functions.oauth-token]
+verify_jwt = false
+
+[functions.oauth-verify]
+verify_jwt = false
+
+[functions.oauth-issue-code]
+verify_jwt = false

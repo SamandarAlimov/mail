@@ -1,0 +1,10 @@
+project_id = "fvwumyqfzcehxuvhempi"
+
+[functions.summarize-email]
+verify_jwt = true
+
+[functions.smart-reply]
+verify_jwt = true
+
+[functions.sso-session]
+verify_jwt = false
