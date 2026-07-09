@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useToast } from "./use-toast";
+import { sendOutboundEmail } from "@/lib/mailApi";
 
 export interface DbEmail {
   id: string;
@@ -116,6 +117,8 @@ export function useEmails(folder: string = "inbox") {
     if (!user) return { error: new Error("Not authenticated") };
 
     try {
+      await sendOutboundEmail(emailData);
+
       const { data, error } = await supabase
         .from("emails")
         .insert({
