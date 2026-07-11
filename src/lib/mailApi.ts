@@ -30,5 +30,13 @@ export async function sendOutboundEmail(
   if (!response.ok) {
     throw new Error(payload.error || "Outbound email failed");
   }
-  return payload as { status: "accepted"; provider: "resend"; id: string };
+  return payload as {
+    status: "accepted";
+    provider: "resend";
+    id: string;
+    sender?: {
+      name: string;
+      email: string;
+    };
+  };
 }

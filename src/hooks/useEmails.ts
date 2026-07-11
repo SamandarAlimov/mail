@@ -117,12 +117,17 @@ export function useEmails(folder: string = "inbox") {
     if (!user) return { error: new Error("Not authenticated") };
 
     try {
-      await sendOutboundEmail(emailData);
+      const outbound = await sendOutboundEmail(emailData);
+      const sentEmail = {
+        ...emailData,
+        from_name: outbound.sender?.name || emailData.from_name,
+        from_email: outbound.sender?.email || emailData.from_email,
+      };
 
       const { data, error } = await supabase
         .from("emails")
         .insert({
-          ...emailData,
+          ...sentEmail,
           user_id: user.id,
         })
         .select()
