@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { DbEmail } from "@/hooks/useEmails";
 import { useSmartReply, SmartReply } from "@/hooks/useSmartReply";
 import { useAttachments } from "@/hooks/useAttachments";
+import { formatRecipients, formatSender, getSenderInitials, sanitizeEmailHtml } from "@/lib/emailDisplay";
 
 interface EmailViewProps {
   email: DbEmail | null;
@@ -47,15 +48,6 @@ function formatFullDate(dateStr: string): string {
     hour: "numeric",
     minute: "2-digit"
   });
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 export function EmailView({ email, onSummarize, onDelete, onUpdate }: EmailViewProps) {
@@ -233,11 +225,13 @@ export function EmailView({ email, onSummarize, onDelete, onUpdate }: EmailViewP
                   ? "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground"
                   : "bg-secondary text-secondary-foreground"
               )}>
-                {email.from_avatar || getInitials(email.from_name)}
+                {email.from_avatar || getSenderInitials(email)}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">{email.from_name}</span>
+                  <span className="font-semibold" title={formatSender(email)}>
+                    {formatSender(email)}
+                  </span>
                   {email.is_verified && (
                     <div className="flex items-center gap-1 text-emerald-500">
                       <Shield className="w-4 h-4" />
@@ -246,10 +240,13 @@ export function EmailView({ email, onSummarize, onDelete, onUpdate }: EmailViewP
                   )}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {email.from_email}
+                  From {formatSender(email)}
                 </div>
-                <button className="flex items-center gap-1 text-xs text-muted-foreground mt-1 hover:text-foreground">
-                  to me
+                <button
+                  className="flex items-center gap-1 text-xs text-muted-foreground mt-1 hover:text-foreground"
+                  title={`To: ${formatRecipients(email.to_recipients) || "me"}${email.cc_recipients?.length ? `\nCc: ${formatRecipients(email.cc_recipients)}` : ""}`}
+                >
+                  to {formatRecipients(email.to_recipients) || "me"}
                   <ChevronDown className="w-3 h-3" />
                 </button>
               </div>
@@ -277,7 +274,7 @@ export function EmailView({ email, onSummarize, onDelete, onUpdate }: EmailViewP
           {/* Body */}
           <div 
             className="prose prose-invert max-w-none"
-            dangerouslySetInnerHTML={{ __html: email.body }}
+            dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(email.body) }}
           />
 
           {/* Attachments */}

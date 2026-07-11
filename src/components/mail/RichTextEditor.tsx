@@ -43,6 +43,8 @@ export function RichTextEditor({
       StarterKit.configure({
         bulletList: { keepMarks: true },
         orderedList: { keepMarks: true },
+        link: false,
+        underline: false,
       }),
       UnderlineExtension,
       LinkExtension.configure({

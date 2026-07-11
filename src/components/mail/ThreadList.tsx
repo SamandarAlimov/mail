@@ -8,6 +8,7 @@ import { Label } from "@/hooks/useLabels";
 import { Checkbox } from "@/components/ui/checkbox";
 import { highlightText, getMatchSnippet } from "@/lib/highlightText";
 import { BulkActionsBar } from "./BulkActionsBar";
+import { formatSender, getSenderInitials, htmlToText } from "@/lib/emailDisplay";
 
 interface ThreadListProps {
   threads: EmailThread[];
@@ -38,15 +39,6 @@ function formatTimestamp(dateStr: string): string {
   } else {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 export function ThreadList({ 
@@ -324,7 +316,7 @@ export function ThreadList({
                           "absolute top-0 left-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-background z-10",
                           "bg-secondary text-secondary-foreground"
                         )}>
-                          {getInitials(thread.emails[0].from_name)}
+                          {getSenderInitials(thread.emails[0])}
                         </div>
                         <div className={cn(
                           "absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-background",
@@ -340,7 +332,7 @@ export function ThreadList({
                           ? "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground"
                           : "bg-secondary text-secondary-foreground"
                       )}>
-                        {latestEmail.from_avatar || getInitials(latestEmail.from_name)}
+                        {latestEmail.from_avatar || getSenderInitials(latestEmail)}
                       </div>
                     )}
 
@@ -361,7 +353,7 @@ export function ThreadList({
                               )}
                             </span>
                           ) : (
-                            searchQuery ? highlightText(latestEmail.from_name, searchQuery) : latestEmail.from_name
+                            searchQuery ? highlightText(formatSender(latestEmail), searchQuery) : formatSender(latestEmail)
                           )}
                         </span>
                         {latestEmail.is_verified && (
@@ -471,7 +463,7 @@ export function ThreadList({
                                 ? "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground"
                                 : "bg-muted text-muted-foreground"
                             )}>
-                              {email.from_avatar || getInitials(email.from_name)}
+                              {email.from_avatar || getSenderInitials(email)}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -479,14 +471,14 @@ export function ThreadList({
                                   "text-sm truncate",
                                   !email.is_read && "font-semibold"
                                 )}>
-                                  {email.from_name}
+                                  {formatSender(email)}
                                 </span>
                                 {!email.is_read && (
                                   <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
                                 )}
                               </div>
                               <div className="text-xs text-muted-foreground truncate">
-                                {email.snippet || email.body.slice(0, 60)}
+                                {email.snippet || htmlToText(email.body).slice(0, 60)}
                               </div>
                             </div>
                             <span className="text-xs text-muted-foreground shrink-0">

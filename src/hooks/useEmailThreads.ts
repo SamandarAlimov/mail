@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { DbEmail } from "@/hooks/useEmails";
+import { formatSender } from "@/lib/emailDisplay";
 
 export interface EmailThread {
   id: string;
@@ -42,7 +43,7 @@ export function useEmailThreads(emails: DbEmail[]) {
       // Get unique participants
       const participantSet = new Set<string>();
       sortedEmails.forEach((e) => {
-        participantSet.add(e.from_name);
+        participantSet.add(formatSender(e));
       });
       
       const hasAttachments = sortedEmails.some(

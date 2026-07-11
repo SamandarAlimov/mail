@@ -33,6 +33,13 @@ import { useSmartReply, SmartReply } from "@/hooks/useSmartReply";
 import { Label } from "@/hooks/useLabels";
 import { LabelSelector } from "./LabelSelector";
 import { useAttachments } from "@/hooks/useAttachments";
+import {
+  formatRecipients,
+  formatSender,
+  getSenderInitials,
+  htmlToText,
+  sanitizeEmailHtml,
+} from "@/lib/emailDisplay";
 
 interface ThreadViewProps {
   email: DbEmail | null;
@@ -64,15 +71,6 @@ function formatShortDate(dateStr: string): string {
     hour: "numeric",
     minute: "2-digit"
   });
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 function EmailMessage({ 
@@ -107,12 +105,14 @@ function EmailMessage({
             ? "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground"
             : "bg-secondary text-secondary-foreground"
         )}>
-          {email.from_avatar || getInitials(email.from_name)}
+          {email.from_avatar || getSenderInitials(email)}
         </div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold">{email.from_name}</span>
+            <span className="font-semibold truncate" title={formatSender(email)}>
+              {formatSender(email)}
+            </span>
             {email.is_verified && (
               <Shield className="w-4 h-4 text-emerald-500" />
             )}
@@ -122,7 +122,7 @@ function EmailMessage({
           </div>
           {!isExpanded && (
             <div className="text-sm text-muted-foreground truncate">
-              {email.snippet || email.body.replace(/<[^>]*>/g, '').slice(0, 100)}
+              {email.snippet || htmlToText(email.body).slice(0, 100)}
             </div>
           )}
         </div>
@@ -154,8 +154,11 @@ function EmailMessage({
             transition={{ duration: 0.2 }}
           >
             <div className="px-4 pb-4">
-              <div className="text-xs text-muted-foreground mb-4">
-                <span>to me</span>
+              <div
+                className="text-xs text-muted-foreground mb-4"
+                title={`To: ${formatRecipients(email.to_recipients) || "me"}${email.cc_recipients?.length ? `\nCc: ${formatRecipients(email.cc_recipients)}` : ""}`}
+              >
+                <span>to {formatRecipients(email.to_recipients) || "me"}</span>
               </div>
 
               {/* AI Summary */}
@@ -172,7 +175,7 @@ function EmailMessage({
               {/* Body */}
               <div 
                 className="prose prose-invert prose-sm max-w-none mb-4"
-                dangerouslySetInnerHTML={{ __html: email.body }}
+                dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(email.body) }}
               />
 
               {/* Attachments */}
@@ -451,7 +454,7 @@ export function ThreadView({ email, thread, labels = [], onSummarize, onDelete, 
           <div className="flex items-center gap-2 mb-3">
             <Reply className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              Reply to {isThread ? "thread" : email.from_name}
+              Reply to {isThread ? "thread" : formatSender(email)}
             </span>
           </div>
           <div className="flex gap-2">

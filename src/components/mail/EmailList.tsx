@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { DbEmail } from "@/hooks/useEmails";
 import { Checkbox } from "@/components/ui/checkbox";
 import { highlightText, getMatchSnippet } from "@/lib/highlightText";
+import { formatSender, getSenderInitials, htmlToText } from "@/lib/emailDisplay";
 
 interface EmailListProps {
   emails: DbEmail[];
@@ -32,15 +33,6 @@ function formatTimestamp(dateStr: string): string {
   } else {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 export function EmailList({ emails, selectedEmail, onSelectEmail, onUpdateEmail, searchQuery = "" }: EmailListProps) {
@@ -110,7 +102,7 @@ export function EmailList({ emails, selectedEmail, onSelectEmail, onUpdateEmail,
                     ? "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground"
                     : "bg-secondary text-secondary-foreground"
                 )}>
-                  {email.from_avatar || getInitials(email.from_name)}
+                  {email.from_avatar || getSenderInitials(email)}
                 </div>
 
                 {/* Content */}
@@ -120,7 +112,7 @@ export function EmailList({ emails, selectedEmail, onSelectEmail, onUpdateEmail,
                       "text-sm truncate",
                       !email.is_read && "font-semibold text-foreground"
                     )}>
-                      {searchQuery ? highlightText(email.from_name, searchQuery) : email.from_name}
+                      {searchQuery ? highlightText(formatSender(email), searchQuery) : formatSender(email)}
                     </span>
                     {email.is_verified && (
                       <Shield className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -146,7 +138,7 @@ export function EmailList({ emails, selectedEmail, onSelectEmail, onUpdateEmail,
                   <div className="text-xs text-muted-foreground line-clamp-2">
                     {searchQuery 
                       ? highlightText(getMatchSnippet(email.body, searchQuery), searchQuery)
-                      : (email.snippet || email.body.slice(0, 100))
+                      : (email.snippet || htmlToText(email.body).slice(0, 100))
                     }
                   </div>
 
