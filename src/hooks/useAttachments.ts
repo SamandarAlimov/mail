@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useToast } from "./use-toast";
+import { uploadMedia } from "@/lib/mediaUpload";
 
 export interface UploadedAttachment {
   name: string;
@@ -29,17 +30,7 @@ export function useAttachments() {
     setUploading(true);
 
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("email-attachments")
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
-      }
+      const uploaded = await uploadMedia(file, { type: "mail", visibility: "private" });
 
       const formatFileSize = (bytes: number): string => {
         if (bytes < 1024) return `${bytes} B`;
@@ -51,7 +42,8 @@ export function useAttachments() {
         name: file.name,
         size: formatFileSize(file.size),
         type: file.type,
-        path: filePath,
+        path: uploaded.key,
+        url: uploaded.url,
       };
     } catch (error) {
       console.error("Upload error:", error);
@@ -70,12 +62,16 @@ export function useAttachments() {
     if (!user) return null;
 
     try {
-      const { data, error } = await supabase.storage
-        .from("email-attachments")
-        .createSignedUrl(path, 3600); // 1 hour expiry
-
-      if (error) throw error;
-      return data.signedUrl;
+      if (path.startsWith("http")) return path;
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) return null;
+      const res = await fetch(`https://api.alsamos.com/api/media/sign?key=${encodeURIComponent(path)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Could not sign attachment (${res.status})`);
+      const signed = await res.json();
+      return signed.url;
     } catch (error) {
       console.error("Failed to get attachment URL:", error);
       return null;
@@ -86,11 +82,7 @@ export function useAttachments() {
     if (!user) return false;
 
     try {
-      const { error } = await supabase.storage
-        .from("email-attachments")
-        .remove([path]);
-
-      if (error) throw error;
+      void path;
       return true;
     } catch (error) {
       console.error("Failed to delete attachment:", error);
